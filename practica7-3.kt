@@ -107,19 +107,22 @@ fun LoginScreen(onLoginSuccess: (User) -> Unit) {
                          * Esto abre la puerta a ataques de Inyección SQL/NoSQL si estos datos se envían a un backend, o a fallos de 
                          * desbordamiento de memoria interna y denegación de servicio (DoS) local si se introducen millones de caracteres.
                          */
+
+                        val soloLetrasYNumeros = userText.all { it.isLetterOrDigit() }
+                        val tamanoCorrecto = userText.length <= 20 && passText.length <= 20
+                          if (!soloLetrasYNumeros || !tamanoCorrecto) {
+                            errorMessage = "El usuario solo puede tener letras y números (máximo 20 caracteres)."
+                            } else {
                         val queryUser = userText
                         val queryPass = passText
 
                         // Simulación de una validación vulnerable que acepta cualquier cadena sin verificar formato ni estructura
                         if (queryUser == "admin" && queryPass == "SecurePass2026!") {
                             onLoginSuccess(User("admin", "ADMIN", "SESSION_TOKEN"))
-                        } else if (queryUser.contains("' OR '1'='1") || queryPass.contains("' OR '1'='1")) {
-                            // Simulación del impacto: La falta de validación de entrada permite que un bypass por inyección 
-                            // sea interpretado positivamente por la lógica del sistema, otorgando acceso de administrador.
-                            onLoginSuccess(User("admin_injected", "ADMIN", "INJECTED_TOKEN"))
                         } else {
                             errorMessage = "Usuario o contraseña incorrectos" 
                         }
+                            }
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
