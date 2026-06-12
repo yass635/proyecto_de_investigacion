@@ -149,8 +149,8 @@ fun ProfileScreen(user: User?, onBack: () -> Unit) {
 
 @Composable
 fun PaymentScreen(onBack: () -> Unit) {
-    // DISEÑO SEGURO: El precio está definido por las reglas de negocio, no por el usuario
-    val PRECIO_PRODUCTO_FIJO = 1500.00
+    // Variable de estado que controla el precio en la interfaz de usuario
+    var precioEditable by remember { mutableStateOf("1500.00") }
     var pagoExitosoMsg by remember { mutableStateOf("") }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -160,29 +160,34 @@ fun PaymentScreen(onBack: () -> Unit) {
         Text("Configuración de Pasarela de Pago", fontSize = 18.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(20.dp))
 
-    // SOLUCIÓN: Mostramos el precio en un Text fijo (No-Editable) e implementamos lógica defensiva
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFA5D6A7)) // Color verde suave de seguridad
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Precio del Servicio Corporativo:", fontSize = 14.sp)
-                Text(
-                    text = "$$PRECIO_PRODUCTO_FIJO USD", 
-                    fontSize = 24.sp, 
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1B5E20)
-                )
-            }
-        }
+        /* 
+         * VULNERABILIDAD AÑADIDA: OWASP TOP 10 - Diseño Inseguro (Insecure Design)
+         * 
+         * EXPLICACIÓN:
+         * La arquitectura de la aplicación permite que el cliente controle y edite el precio final de una transacción 
+         * directamente desde la interfaz gráfica (el cuadro de texto 'precioEditable'). 
+         * El diseño del sistema confía ciegamente en el flujo visual expuesto y procesa el cobro basado puramente 
+         * en lo que el usuario decide escribir en la pantalla, en lugar de validar el precio real y estático contra 
+         * la base de datos del servidor central. Esto rompe la regla de "nunca confiar en los límites del cliente".
+         */
+        Text("Detalle del Servicio Corporativo Premium", fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // FALLO ESTRESTRUCTURAL: Se expone el precio en un campo TextField modificable por el usuario
+        TextField(
+            value = precioEditable,
+            onValueChange = { precioEditable = it },
+            label = { Text("Total a Pagar ($)") },
+            modifier = Modifier.fillMaxWidth()
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-        onClick = {
-            // El proceso de cobro se ejecuta exclusivamente usando la variable protegida del sistema
-            pagoExitosoMsg = "Transacción Procesada con éxito por un valor seguro de: $$PRECIO_PRODUCTO_FIJO"
-        },
+            onClick = {
+                // Simulación del cobro: la app ejecuta el pago basándose en el diseño inseguro
+                pagoExitosoMsg = "✅ Transacción Procesada con éxito por un valor de: $$precioEditable"
+            },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("PAGAR AHORA")
