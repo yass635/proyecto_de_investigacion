@@ -24,9 +24,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.ui.theme.MyApplicationTheme
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
-
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -101,22 +98,12 @@ fun LoginScreen(onLoginSuccess: (User) -> Unit) {
                     onClick = {
                         if (userText == "admin" && passText == "admin123") {
                             
-                            // SOLUCIÓN: Cifrado automático de datos sensibles en el almacenamiento local
-                            // Usamos las librerías nativas de Android Jetpack para asegurar los datos persistentes.
-                            val masterKey = MasterKey.Builder(context)
-                                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM) // Genera una llave maestra cifrada por hardware
-                                .build()
-
-                            val secureSharedPref = EncryptedSharedPreferences.create(
-                                context,
-                                "secure_user_session",
-                                masterKey,
-                                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV, // Cifra las etiquetas (keys)
-                                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM // Cifra los valores (values)
-                            )
-                            with(secureSharedPref.edit()) {
+                            // 🔴 ERROR DE FALLO CRIPTOGRÁFICO (OWASP A02:2021)
+                            // Se almacena la contraseña directamente en texto plano dentro del XML de SharedPreferences
+                            val sharedPref = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
+                            with(sharedPref.edit()) {
                                 putString("saved_username", userText)
-                                putString("saved_password", passText) // <- Ahora viaja y se almacena 100% cifrado
+                                putString("saved_password", passText) // <- Datos sensibles expuestos
                                 apply()
                             }
 
