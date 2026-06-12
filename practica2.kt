@@ -24,6 +24,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKeys
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -100,7 +102,14 @@ fun LoginScreen(onLoginSuccess: (User) -> Unit) {
                             
                             // 🔴 ERROR DE FALLO CRIPTOGRÁFICO (OWASP A02:2021)
                             // Se almacena la contraseña directamente en texto plano dentro del XML de SharedPreferences
-                            val sharedPref = context.getSharedPreferences("user_session", Context.MODE_PRIVATE)
+                            val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+                            val secureSharedPref = EncryptedSharedPreferences.create(
+                        "secure_user_session",
+                        masterKeyAlias,
+                        context,
+                        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                    )
                             with(sharedPref.edit()) {
                                 putString("saved_username", userText)
                                 putString("saved_password", passText) // <- Datos sensibles expuestos
