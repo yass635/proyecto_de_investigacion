@@ -48,6 +48,7 @@ class MainActivity : ComponentActivity() {
                                 onBack = { currentScreen = "dashboard" }
                             )
                             "admin" -> AdminPanel(
+                                user = currentUser, 
                                 onBack = { currentScreen = "dashboard" }
                             )
                             "payments" -> PaymentScreen(
@@ -146,17 +147,6 @@ fun ProfileScreen(user: User?, onBack: () -> Unit) {
                 Text("Nombre: ${user?.username}")
                 Text("Rol: ${user?.role}")
 
-                /* 
-                 * VULNERABILIDAD EXCLUSIVA: OWASP TOP 10 - Exposición de Datos Sensibles (Sensitive Data Exposure)
-                 * 
-                 * EXPLICACIÓN:
-                 * La aplicación muestra datos privados de alta criticidad en la interfaz gráfica sin ningún tipo 
-                 * de cifrado visual ni máscara. Expone directamente en texto plano:
-                 * 1. El Token JWT de sesión completa (`user?.token`).
-                 * 2. La contraseña actual de la cuenta (`user?.passExposed`).
-                 * Esto permite que cualquier persona cercana que mire la pantalla (shoulder surfing) o cualquier 
-                 * captura de pantalla accidental filtre credenciales de control que deberían permanecer ocultas o protegidas.
-                 */
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("⚠️ DATOS PRIVADOS EXPUESTOS:", color = Color.Red, fontWeight = FontWeight.Bold)
                 
@@ -185,19 +175,23 @@ fun PaymentScreen(onBack: () -> Unit) {
 }
 
 @Composable
-fun AdminPanel(onBack: () -> Unit) {
+fun AdminPanel(user: User?, onBack: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFFFEBEE)).padding(16.dp)) {
         IconButton(onClick = onBack) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
         }
-        Text("ÁREA RESTRINGIDA: ADMINISTRACIÓN", color = Color.Red, fontSize = 22.sp, fontWeight = FontWeight.Black)
-        Spacer(modifier = Modifier.height(20.dp))
-        Text("Usuarios Conectados actualmente:")
-        val users = listOf("admin", "paco", "marta", "invitado")
-        LazyColumn {
-            items(users) { name ->
-                Text("• $name")
+        if (user?.role == "ADMIN") {
+            Text("ÁREA RESTRINGIDA: ADMINISTRACIÓN", color = Color.Red, fontSize = 22.sp, fontWeight = FontWeight.Black)
+            Spacer(modifier = Modifier.height(20.dp))
+            Text("Usuarios Conectados actualmente:")
+            val users = listOf("admin", "paco", "marta", "invitado")
+            LazyColumn {
+                items(users) { name ->
+                    Text("• $name")
+                }
             }
+        } else {
+            Text("Acceso denegado. No tienes permisos de administrador.", color = Color.Red, fontSize = 18.sp, fontWeight = FontWeight.Bold)
         }
     }
 }

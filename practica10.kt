@@ -180,6 +180,7 @@ fun AdminPanel(onBack: () -> Unit) {
     LaunchedEffect(Unit) {
         // FALLO: El bloque de auditoría está completamente vacío.
         // No hay un Log.w() o Log.e() que advierta de una intrusión en una zona con datos críticos (patentes/secretos).
+        Log.w("Security", "Intento de acceso a área restringida")
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFFFEBEE)).padding(16.dp)) {
