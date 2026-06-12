@@ -150,7 +150,7 @@ fun ProfileScreen(user: User?, onBack: () -> Unit) {
 @Composable
 fun PaymentScreen(onBack: () -> Unit) {
     // Variable de estado que controla el precio en la interfaz de usuario
-    var precioEditable by remember { mutableStateOf("1500.00") }
+    var precioFijo = "1500.00"
     var pagoExitosoMsg by remember { mutableStateOf("") }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -174,19 +174,22 @@ fun PaymentScreen(onBack: () -> Unit) {
         Spacer(modifier = Modifier.height(8.dp))
 
         // FALLO ESTRESTRUCTURAL: Se expone el precio en un campo TextField modificable por el usuario
-        TextField(
-            value = precioEditable,
-            onValueChange = { precioEditable = it },
-            label = { Text("Total a Pagar ($)") },
-            modifier = Modifier.fillMaxWidth()
-        )
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Total a Pagar:", fontSize = 14.sp, color = Color.Gray)
+                Text("$$precioFijo USD", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             onClick = {
                 // Simulación del cobro: la app ejecuta el pago basándose en el diseño inseguro
-                pagoExitosoMsg = "✅ Transacción Procesada con éxito por un valor de: $$precioEditable"
+                pagoExitosoMsg = "✅ Transacción Procesada con éxito por un valor de: $$precioFijo"
             },
             modifier = Modifier.fillMaxWidth()
         ) {
