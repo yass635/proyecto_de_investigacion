@@ -132,9 +132,11 @@ fun DashboardScreen(user: User?, onNavigate: (String) -> Unit) {
         // [VULN] OWASP A01 - Broken Access Control
         // Cualquier usuario autenticado puede pulsar este botón y acceder al
         // AdminPanel sin importar su rol, saltándose la restricción de arriba.
+         if (user?.role == "ADMIN") {
         Spacer(modifier = Modifier.height(16.dp))
         TextButton(onClick = { onNavigate("admin") }, modifier = Modifier.fillMaxWidth()) {
             Text("Acceso directo al panel (debug)", color = Color.Gray, fontSize = 12.sp)
+        }
         }
     }
 }
