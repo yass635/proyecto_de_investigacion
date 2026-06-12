@@ -162,11 +162,12 @@ fun ProfileScreen(user: User?, onBack: () -> Unit) {
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("Contraseña actual:", fontWeight = FontWeight.SemiBold)
-                Text("${user?.passExposed}", color = Color.DarkGray) // Exposición de contraseña
+                Text("*********", color = Color.DarkGray) // Exposición de contraseña
 
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("Token JWT de Sesión:", fontWeight = FontWeight.SemiBold)
-                Text("${user?.token}", fontSize = 11.sp, color = Color.Gray) // Exposición de token corporativo
+                
+                Text("eyJhbGci...", fontSize = 11.sp, color = Color.Gray) // Exposición de token corporativo
             }
         }
     }
