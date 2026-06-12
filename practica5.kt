@@ -157,8 +157,7 @@ fun PaymentScreen(onBack: () -> Unit) {
          * datos altamente sensibles directamente en la interfaz. Un atacante o usuario común puede ver credenciales 
          * internas del sistema (el secreto de Stripe y endpoints de pruebas), lo que compromete gravemente la pasarela financiera.
          */
-        val DEBUG_MODE = true 
-        if (DEBUG_MODE) {
+        if (BuildConfig.DEBUG) {
             Spacer(modifier = Modifier.height(24.dp))
             Card(
                 modifier = Modifier.fillMaxWidth(),
