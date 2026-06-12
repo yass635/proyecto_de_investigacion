@@ -106,12 +106,20 @@ fun LoginScreen(onLoginSuccess: (User) -> Unit) {
                          * 
                          * (Nota de diseño seguro: Se eliminó el hardcoding anterior; ahora simula una consulta limpia, validando de forma genérica).
                          */
-                        val isValidCredentials = (userText == "admin" && passText == "123456")
+                        val user = (userText == "admin" && passText == "Admin11122")
+                        val tieneContrasenaLarga = passText.length >= 8
+                        val tieneLetras = passText.any { it.isLetter() }
+                        val tieneNumeros = passText.any { it.isDigit() }
 
-                        if (isValidCredentials) {
+                        if (!tieneContrasenaLarga || !tieneLetras || !tieneNumeros) {
+                            errorMessage = "La contraseña debe tener mínimo 8 caracteres, incluir letras y números."
+                        } else {
+                            
+                        if (user) {
                             onLoginSuccess(User("admin", "ADMIN", "SESSION_TOKEN"))
                         } else {
                             errorMessage = "Usuario o contraseña incorrectos" 
+                        }
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
