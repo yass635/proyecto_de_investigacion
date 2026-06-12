@@ -129,14 +129,12 @@ fun DashboardScreen(user: User?, onNavigate: (String) -> Unit) {
             Text("Configuración de Pagos")
         }
 
-        // [SOLUCION] OWASP A01 - Broken Access Control
-        // envolvemos el acceso directo de depuracion en la bandera nativa buildConfig.DEBUG.
-        // De esta forma, el boton de bypass se elimina por completo al compilar para produccion (Release).
-        if (BuildConfig.DEBUG) {
-            Spacer(modifier = Modifier.height(16.dp))
-            TextButton(onClick = { onNavigate("admin") }, modifier = Modifier.fillMaxWidth()) {
-                Text("Acceso directo al panel (debug)", color = Color.Gray, fontSize = 12.sp)
-            }
+        // [VULN] OWASP A01 - Broken Access Control
+        // Cualquier usuario autenticado puede pulsar este botón y acceder al
+        // AdminPanel sin importar su rol, saltándose la restricción de arriba.
+        Spacer(modifier = Modifier.height(16.dp))
+        TextButton(onClick = { onNavigate("admin") }, modifier = Modifier.fillMaxWidth()) {
+            Text("Acceso directo al panel (debug)", color = Color.Gray, fontSize = 12.sp)
         }
     }
 }
