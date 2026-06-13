@@ -141,9 +141,7 @@ fun ProfileScreen(user: User?, onBack: () -> Unit) {
                 // VULNERABILIDAD SIMPLIFICADA: 
                 // Se utiliza el método antiguo descatalogado "Html.fromHtml(string)" sin flags de seguridad.
                 // Si el nombre del usuario contiene código malicioso de un servidor, este componente desactualizado lo procesará.
-                val oldDectecatedComponent = Html.fromHtml(user?.username ?: "")
-                
-                Text("Nombre: $oldDectecatedComponent")
+            Text("Nombre: ${user?.username ?: ""}")
                 Text("Rol: ${user?.role}")
             }
         }
