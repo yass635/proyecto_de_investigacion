@@ -26,6 +26,7 @@ import com.example.myapplication.ui.theme.MyApplicationTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme {
@@ -47,9 +48,13 @@ class MainActivity : ComponentActivity() {
                                 user = currentUser,
                                 onBack = { currentScreen = "dashboard" }
                             )
-                            "admin" -> AdminPanel(
-                                onBack = { currentScreen = "dashboard" }
-                            )
+                            "admin" -> {
+                                if (currentUser?.role == "ADMIN") {
+                                    AdminPanel(onBack = { currentScreen = "dashboard" })
+                                } else {
+                                    currentScreen = "dashboard"
+                                }
+                            }
                             "payments" -> PaymentScreen(
                                 onBack = { currentScreen = "dashboard" }
                             )
@@ -61,14 +66,24 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// Se añade el campo password al modelo para simular la fuga de información sensible
-data class User(val username: String, val role: String, val token: String, val passExposed: String)
+data class User(val username: String, val role: String, val token: String)
+
+// ==================================================================================
+// COMPONENTE VULNERABLE Y DESACTUALIZADO (Simulación de librería externa)
+// Representa el uso de una dependencia antigua (ej. Fastjson < 1.2.25 u Gson obsoleta)
+// que contiene fallos conocidos de deserialización o desbordamiento de memoria.
+// ==================================================================================
+class OutdatedJsonParser {
+    fun parseConfig(rawJson: String): String {
+        // En una librería real desactualizada, este método permite la ejecución de exploits conocidos
+        return "Configuración Procesada Exitosamente"
+    }
+}
 
 @Composable
 fun LoginScreen(onLoginSuccess: (User) -> Unit) {
     var userText by remember { mutableStateOf("") }
     var passText by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier.fillMaxSize().background(Color(0xFF0D47A1)).padding(24.dp),
@@ -77,6 +92,7 @@ fun LoginScreen(onLoginSuccess: (User) -> Unit) {
     ) {
         Text("SISTEMA CORPORATIVO", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(32.dp))
+
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(20.dp)) {
                 TextField(value = userText, onValueChange = { userText = it }, label = { Text("Usuario") })
@@ -85,22 +101,16 @@ fun LoginScreen(onLoginSuccess: (User) -> Unit) {
                     value = passText,
                     onValueChange = { passText = it },
                     label = { Text("Password") },
-                    visualTransformation = PasswordVisualTransformation() // El login aquí es seguro
+                    visualTransformation = PasswordVisualTransformation()
                 )
                 Spacer(modifier = Modifier.height(20.dp))
 
-                if (errorMessage.isNotEmpty()) {
-                    Text(errorMessage, color = Color.Red, fontSize = 14.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
                 Button(
                     onClick = {
-                        if (userText == "admin" && passText == "SecurePass2026!") {
-                            // Al iniciar sesión de forma correcta, guardamos los datos de la sesión
-                            onLoginSuccess(User("admin", "ADMIN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTgwMDAwMDAwMH0", passText))
-                        } else {
-                            errorMessage = "Usuario o contraseña incorrectos" 
+                        if (userText == "admin" && passText == "admin123") {
+                            onLoginSuccess(User("admin", "ADMIN", "SESSION_TOKEN"))
+                        } else if (userText == "paco" && passText == "paco123") {
+                            onLoginSuccess(User("paco", "USER", "SESSION_TOKEN_2"))
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
@@ -117,15 +127,19 @@ fun DashboardScreen(user: User?, onNavigate: (String) -> Unit) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("Bienvenido, ${user?.username}", fontSize = 22.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(20.dp))
+
         Button(onClick = { onNavigate("profile") }, modifier = Modifier.fillMaxWidth()) {
             Text("Ver Mi Perfil")
         }
+
         Spacer(modifier = Modifier.height(8.dp))
+
         if (user?.role == "ADMIN") {
             Button(onClick = { onNavigate("admin") }, colors = ButtonDefaults.buttonColors(containerColor = Color.Red), modifier = Modifier.fillMaxWidth()) {
                 Text("PANEL DE ADMINISTRACIÓN")
             }
         }
+
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = { onNavigate("payments") }, modifier = Modifier.fillMaxWidth()) {
             Text("Configuración de Pagos")
@@ -136,38 +150,13 @@ fun DashboardScreen(user: User?, onNavigate: (String) -> Unit) {
 @Composable
 fun ProfileScreen(user: User?, onBack: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        IconButton(onClick = onBack) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
-        }
+        IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
         Text("Mi Perfil", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        
+
         Card(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Nombre: ${user?.username}")
                 Text("Rol: ${user?.role}")
-
-                /* 
-                 * VULNERABILIDAD EXCLUSIVA: OWASP TOP 10 - Exposición de Datos Sensibles (Sensitive Data Exposure)
-                 * 
-                 * EXPLICACIÓN:
-                 * La aplicación muestra datos privados de alta criticidad en la interfaz gráfica sin ningún tipo 
-                 * de cifrado visual ni máscara. Expone directamente en texto plano:
-                 * 1. El Token JWT de sesión completa (`user?.token`).
-                 * 2. La contraseña actual de la cuenta (`user?.passExposed`).
-                 * Esto permite que cualquier persona cercana que mire la pantalla (shoulder surfing) o cualquier 
-                 * captura de pantalla accidental filtre credenciales de control que deberían permanecer ocultas o protegidas.
-                 */
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("⚠️ DATOS PRIVADOS EXPUESTOS:", color = Color.Red, fontWeight = FontWeight.Bold)
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Contraseña actual:", fontWeight = FontWeight.SemiBold)
-                Text("*********", color = Color.DarkGray) // Exposición de contraseña
-
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Token JWT de Sesión:", fontWeight = FontWeight.SemiBold)
-                
-                Text("eyJhbGci...", fontSize = 11.sp, color = Color.Gray) // Exposición de token corporativo
             }
         }
     }
@@ -175,23 +164,29 @@ fun ProfileScreen(user: User?, onBack: () -> Unit) {
 
 @Composable
 fun PaymentScreen(onBack: () -> Unit) {
+    // Se inicializa el componente desactualizado para procesar datos de la pantalla
+    val parser = remember { OutdatedJsonParser() }
+    val statusResult = remember { parser.parseConfig("{'gateway':'stripe'}") }
+
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        IconButton(onClick = onBack) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
-        }
+        IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
         Text("Configuración de Pasarela de Pago", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+
         Spacer(modifier = Modifier.height(20.dp))
         Text("Estado de Stripe: Conectado")
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        // Uso del resultado del componente vulnerable
+        Text("Librería Externa: $statusResult", color = Color.Gray, fontSize = 14.sp)
     }
 }
 
 @Composable
 fun AdminPanel(onBack: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFFFEBEE)).padding(16.dp)) {
-        IconButton(onClick = onBack) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
-        }
+        IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
         Text("ÁREA RESTRINGIDA: ADMINISTRACIÓN", color = Color.Red, fontSize = 22.sp, fontWeight = FontWeight.Black)
+
         Spacer(modifier = Modifier.height(20.dp))
         Text("Usuarios Conectados actualmente:")
         val users = listOf("admin", "paco", "marta", "invitado")
