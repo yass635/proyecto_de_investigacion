@@ -1,6 +1,5 @@
-package com.example.myapplication
-
 import android.os.Bundle
+import android.text.Html
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -12,8 +11,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -21,7 +18,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.myapplication.ui.theme.MyApplicationTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,7 +25,7 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            MyApplicationTheme {
+            MaterialTheme {
                 var currentScreen by remember { mutableStateOf("login") }
                 var currentUser by remember { mutableStateOf<User?>(null) }
 
@@ -48,13 +44,10 @@ class MainActivity : ComponentActivity() {
                                 user = currentUser,
                                 onBack = { currentScreen = "dashboard" }
                             )
-                            "admin" -> {
-                                if (currentUser?.role == "ADMIN") {
-                                    AdminPanel(onBack = { currentScreen = "dashboard" })
-                                } else {
-                                    currentScreen = "dashboard"
-                                }
-                            }
+                            "admin" -> AdminPanel(
+                                user = currentUser,
+                                onBack = { currentScreen = "dashboard" }
+                            )
                             "payments" -> PaymentScreen(
                                 onBack = { currentScreen = "dashboard" }
                             )
@@ -67,18 +60,6 @@ class MainActivity : ComponentActivity() {
 }
 
 data class User(val username: String, val role: String, val token: String)
-
-// ==================================================================================
-// COMPONENTE VULNERABLE Y DESACTUALIZADO (Simulación de librería externa)
-// Representa el uso de una dependencia antigua (ej. Fastjson < 1.2.25 u Gson obsoleta)
-// que contiene fallos conocidos de deserialización o desbordamiento de memoria.
-// ==================================================================================
-class OutdatedJsonParser {
-    fun parseConfig(rawJson: String): String {
-        // En una librería real desactualizada, este método permite la ejecución de exploits conocidos
-        return "Configuración Procesada Exitosamente"
-    }
-}
 
 @Composable
 fun LoginScreen(onLoginSuccess: (User) -> Unit) {
@@ -108,7 +89,8 @@ fun LoginScreen(onLoginSuccess: (User) -> Unit) {
                 Button(
                     onClick = {
                         if (userText == "admin" && passText == "admin123") {
-                            onLoginSuccess(User("admin", "ADMIN", "SESSION_TOKEN"))
+                            // Simulamos que el administrador configuró un nombre con etiquetas HTML maliciosas
+                            onLoginSuccess(User("<b>Admin</b> <img src='x' onerror='alert(1)'>", "ADMIN", "SESSION_TOKEN"))
                         } else if (userText == "paco" && passText == "paco123") {
                             onLoginSuccess(User("paco", "USER", "SESSION_TOKEN_2"))
                         }
@@ -155,7 +137,13 @@ fun ProfileScreen(user: User?, onBack: () -> Unit) {
 
         Card(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("Nombre: ${user?.username}")
+                
+                // VULNERABILIDAD SIMPLIFICADA: 
+                // Se utiliza el método antiguo descatalogado "Html.fromHtml(string)" sin flags de seguridad.
+                // Si el nombre del usuario contiene código malicioso de un servidor, este componente desactualizado lo procesará.
+                val oldDectecatedComponent = Html.fromHtml(user?.username ?: "")
+                
+                Text("Nombre: $oldDectecatedComponent")
                 Text("Rol: ${user?.role}")
             }
         }
@@ -164,25 +152,24 @@ fun ProfileScreen(user: User?, onBack: () -> Unit) {
 
 @Composable
 fun PaymentScreen(onBack: () -> Unit) {
-    // Se inicializa el componente desactualizado para procesar datos de la pantalla
-    val parser = remember { OutdatedJsonParser() }
-    val statusResult = remember { parser.parseConfig("{'gateway':'stripe'}") }
-
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
         Text("Configuración de Pasarela de Pago", fontSize = 18.sp, fontWeight = FontWeight.Bold)
 
         Spacer(modifier = Modifier.height(20.dp))
         Text("Estado de Stripe: Conectado")
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        // Uso del resultado del componente vulnerable
-        Text("Librería Externa: $statusResult", color = Color.Gray, fontSize = 14.sp)
     }
 }
 
 @Composable
-fun AdminPanel(onBack: () -> Unit) {
+fun AdminPanel(user: User?, onBack: () -> Unit) {
+    if (user == null || user.role != "ADMIN") {
+        LaunchedEffect(Unit) {
+            onBack()
+        }
+        return
+    }
+
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFFFEBEE)).padding(16.dp)) {
         IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
         Text("ÁREA RESTRINGIDA: ADMINISTRACIÓN", color = Color.Red, fontSize = 22.sp, fontWeight = FontWeight.Black)
